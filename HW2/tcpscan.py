@@ -1,6 +1,7 @@
 import argparse 
 import scapy
 import sys
+import socket 
 from scapy.all import IP, TCP, sr1, send 
 
 DEFAULT_PORTS = [21, 22, 23, 25, 80, 110, 143, 443, 587, 853, 993, 3389, 8080]
@@ -44,7 +45,7 @@ for port in ports:
     print(f'Trying to scan port {port}')
     pkt = IP(dst=args.target)/TCP(dport=port,flags="S")
     
-    resp = sr1(pkt,timeout=1)
+    resp = sr1(pkt,timeout=1,verbose=0)
     if resp is None:
         # no response to syn packtet
         continue 
@@ -57,8 +58,34 @@ for port in ports:
 
             # send rst close connection
             rst_pkt = IP(dst=args.target)/TCP(dport=port,flags="R")
-            send(rst_pkt)
+            send(rst_pkt,verbose=0)
         elif flags==0x14:
             print(f'RST received, closed')
 print(f'open ports are {open_ports}')
 
+
+print("\n service fingerprinting now")
+
+for port in open_ports:
+    try:
+        s = socket.create_connection((args.target,port),timeout=2)
+        s.settimeout(2)
+
+        try:
+            data=s.recv(1024)
+            if data:
+                data = ''.join(chr(b) for b in data)
+                print("Type: (1) TCP server-initialted")
+                print(f"Response: {data[:1024]}\n")
+
+                s.close()
+                continue 
+        except socket.timeout:
+            print(f'socket timed out')
+        
+        print("Type: unkown (no TCP banner)")
+        print("Response is none")
+        s.close()
+    except Exception as e:
+        print(f'something wrong happened gg')
+        pass 
