@@ -83,6 +83,21 @@ for port in open_ports:
         except socket.timeout:
             print(f'socket timed out')
         
+        # try http now 
+        try:
+            s.sendall(b"GET / HTTP/1.0\r\n\r\n")
+            data = s.recv(1024)
+
+            if data:
+                data = ''.join(chr(b) for b in data)
+                print(f'Type: (3) HTTP server')
+                print(f"Response: {data[:1024]}\n")
+
+                s.close()
+                continue 
+        except socket.timeout:
+            pass
+        
         print("Type: unkown (no TCP banner)")
         print("Response is none")
         s.close()
