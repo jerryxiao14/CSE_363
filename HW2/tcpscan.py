@@ -68,10 +68,11 @@ print("\n service fingerprinting now")
 
 for port in open_ports:
     print(f'trying port {port}')
+
     try:
         s = socket.create_connection((args.target,port),timeout=2)
         s.settimeout(2)
-
+        # TCP banner
         try:
             data=s.recv(1024)
             if data:
@@ -82,10 +83,11 @@ for port in open_ports:
                 s.close()
                 continue 
         except socket.timeout:
-            print(f'socket timed out')
-        
+            pass
         # try http now 
         try:
+            s.close() 
+            s = socket.create_connection((args.target,port),timeout=2)
             s.settimeout(2)
             s.sendall(b"GET / HTTP/1.0\r\n\r\n")
             data = s.recv(1024)
@@ -97,6 +99,23 @@ for port in open_ports:
 
                 s.close()
                 continue 
+        except socket.timeout:
+            pass
+        # generic tcp
+        try:
+            s.close()
+            s=socket.create_connection((args.taget,port),timeout=2)
+            s.settimeout(2)
+
+            s.sendall(b"\r\n\r\n\r\n\r\n")
+            data=s.recv(1024)
+
+            print("Type: (5) Generic TCP server")
+            if data:
+                data=''.join(chr(b) for b in data)
+                print(f'Response: {data[:1024]}\n')
+            else:
+                print("Response: none\n")
         except socket.timeout:
             pass
         
