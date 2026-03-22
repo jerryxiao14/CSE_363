@@ -3,6 +3,7 @@ import scapy
 import sys
 import socket 
 from scapy.all import IP, TCP, sr1, send 
+import ssl
 
 DEFAULT_PORTS = [21, 22, 23, 25, 80, 110, 143, 443, 587, 853, 993, 3389, 8080]
 

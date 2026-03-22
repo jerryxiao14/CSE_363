@@ -26,6 +26,8 @@ while True:
     conn.close()
 '''
 
+HOST = '0.0.0.0'
+PORT = 3132
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
