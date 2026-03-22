@@ -104,7 +104,7 @@ for port in open_ports:
         # generic tcp
         try:
             s.close()
-            s=socket.create_connection((args.taget,port),timeout=2)
+            s=socket.create_connection((args.target,port),timeout=2)
             s.settimeout(2)
 
             s.sendall(b"\r\n\r\n\r\n\r\n")
