@@ -14,7 +14,7 @@ while True:
     data = conn.recv(1024)
     
     # Only respond if the data looks like a generic probe
-    if data.strip() == b"\r\n\r\n\r\n\r\n":
+    if data == b"\r\n\r\n\r\n\r\n":
         conn.sendall(b"generic reply")
     else:
         # Ignore everything else (HTTP GET, banner requests, etc.)
