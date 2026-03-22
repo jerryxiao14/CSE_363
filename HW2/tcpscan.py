@@ -123,5 +123,5 @@ for port in open_ports:
         print("Response is none")
         s.close()
     except Exception as e:
-        print(f'something wrong happened gg')
+        print(f'something wrong happened error is {e}')
         pass 
