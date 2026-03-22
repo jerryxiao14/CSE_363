@@ -67,6 +67,7 @@ print(f'open ports are {open_ports}')
 print("\n service fingerprinting now")
 
 for port in open_ports:
+    print(f'trying port {port}')
     try:
         s = socket.create_connection((args.target,port),timeout=2)
         s.settimeout(2)
@@ -85,6 +86,7 @@ for port in open_ports:
         
         # try http now 
         try:
+            s.settimeout(2)
             s.sendall(b"GET / HTTP/1.0\r\n\r\n")
             data = s.recv(1024)
 
