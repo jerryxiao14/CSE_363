@@ -203,7 +203,7 @@ for port in open_ports:
         sock = socket.create_connection((args.target, port), timeout=2)
         context = ssl.create_default_context()
         context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
+        #context.verify_mode = ssl.CERT_NONE
 
         server_name = args.target if not args.target.replace(".", "").isdigit() else None
         tls_sock = context.wrap_socket(sock, server_hostname=hostname)
