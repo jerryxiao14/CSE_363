@@ -185,24 +185,35 @@ print("\n service fingerprinting now")
 for port in open_ports:
     print(f'trying port {port}')
 
+    is_tls = False
+    cn = "unknown"
+
     try:
+        sock = socket.create_connection((args.target, port), timeout=2)
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
-        sock = socket.create_connection((args.target, port), timeout=2)
         tls_sock = context.wrap_socket(sock, server_hostname=args.target)
         tls_sock.settimeout(2)
 
         cert = tls_sock.getpeercert()
         cn = get_cn(cert)
 
-        probe_tls(tls_sock, args.target, port, cn)
-        tls_sock.close()
-        continue
-    except (ssl.SSLError, ConnectionResetError, socket.timeout, OSError):
+        is_tls = True
+    except Exception:
         pass
-    
+    if is_tls:
+        try:
+            probe_tls(tls_sock, args.target, port, cn)
+            tls_sock.close()
+        except:
+            print(f"Host: {args.target}:{port}")
+            print(f"Type: (6) Generic TLS server | CN {cn}")
+            print("Response: none\n")
+        continue
+
+# otherwise TCP
     probe_tcp(args.target, port)
     continue 
     # TLS
