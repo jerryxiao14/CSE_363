@@ -8,6 +8,7 @@ import ssl
 DEFAULT_PORTS = [21, 22, 23, 25, 80, 110, 143, 443, 587, 853, 993, 3389, 8080]
 
 
+
 def get_cn(cert):
     try:
         for typ, val in cert.get("subjectAltName", []):
@@ -25,6 +26,102 @@ def get_cn(cert):
     except:
         pass 
     return "unknown"
+
+def probe_tls(tls_sock, target, port, cn):
+    # (2)
+    try:
+        data = tls_sock.recv(1024)
+        if data:
+            print(f"Host: {target}:{port}")
+            print(f"Type: (2) TLS server-initiated | CN {cn}")
+            print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+            return True
+    except:
+        pass
+
+    # (4)
+    try:
+        tls_sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
+        data = tls_sock.recv(1024)
+        if data and data.startswith(b"HTTP"):
+            print(f"Host: {target}:{port}")
+            print(f"Type: (4) HTTPS server | CN {cn}")
+            print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+            return True
+    except:
+        pass
+
+    # (6)
+    try:
+        tls_sock.sendall(b"\r\n\r\n\r\n\r\n")
+        data = tls_sock.recv(1024)
+    except (socket.timeout, ConnectionResetError):
+        data = b""
+
+    print(f"Host: {target}:{port}")
+    print(f"Type: (6) Generic TLS server | CN {cn}")
+    if data:
+        print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+    else:
+        print("Response: none\n")
+
+    return True 
+
+def probe_tcp(target, port):
+    # (1)
+    try:
+        s = socket.create_connection((target, port), timeout=2)
+        s.settimeout(2)
+
+        try:
+            data = s.recv(1024)
+            if data:
+                print(f"Host: {target}:{port}")
+                print("Type: (1) TCP server-initiated")
+                print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+                return True
+        except socket.timeout:
+            pass
+        s.close()
+    except:
+        pass
+
+    # (3)
+    try:
+        s = socket.create_connection((target, port), timeout=2)
+        s.settimeout(2)
+        s.sendall(b"GET / HTTP/1.0\r\n\r\n")
+
+        data = s.recv(1024)
+        if data and data.startswith(b"HTTP"):
+            print(f"Host: {target}:{port}")
+            print("Type: (3) HTTP server")
+            print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+            return True
+        s.close()
+    except:
+        pass
+
+    # (5)
+    try:
+        s = socket.create_connection((target, port), timeout=2)
+        s.settimeout(2)
+        s.sendall(b"\r\n\r\n\r\n\r\n")
+
+        data = s.recv(1024)
+    except (socket.timeout, ConnectionResetError):
+        data = b""
+
+    print(f"Host: {target}:{port}")
+    print("Type: (5) Generic TCP server")
+    if data:
+        print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+    else:
+        print("Response: none\n")
+
+    return True 
+    
+
 
 parser = argparse.ArgumentParser(prog="tcpscan",description="TCP SYN scanenr w service fingerprint")
 
@@ -88,7 +185,26 @@ print("\n service fingerprinting now")
 for port in open_ports:
     print(f'trying port {port}')
 
+    try:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
 
+        sock = socket.create_connection((args.target, port), timeout=2)
+        tls_sock = context.wrap_socket(sock, server_hostname=args.target)
+        tls_sock.settimeout(2)
+
+        cert = tls_sock.getpeercert()
+        cn = get_cn(cert)
+
+        probe_tls(tls_sock, args.target, port, cn)
+        tls_sock.close()
+        continue
+    except (ssl.SSLError, ConnectionResetError, socket.timeout, OSError):
+        pass
+    
+    probe_tcp(args.target, port)
+    continue 
     # TLS
     cn = "unknown"
 
