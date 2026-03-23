@@ -8,6 +8,24 @@ import ssl
 DEFAULT_PORTS = [21, 22, 23, 25, 80, 110, 143, 443, 587, 853, 993, 3389, 8080]
 
 
+def get_cn(cert):
+    try:
+        for typ, val in cert.get("subjectAltName", []):
+            if typ == "DNS":
+                return val
+    except:
+        pass
+
+    try:
+        subj = cert.get("subject",[])
+        for item in subj:
+            for key,value in item:
+                if key=='commonName':
+                    return value 
+    except:
+        pass 
+    return "unknown"
+
 parser = argparse.ArgumentParser(prog="tcpscan",description="TCP SYN scanenr w service fingerprint")
 
 parser.add_argument("-p",metavar="port_range",help="Port(s) to scan(e.g, 80, 400-500, 28)")
@@ -72,105 +90,60 @@ for port in open_ports:
 
 
     # TLS
+    cn = "unknown"
+
     try:
         context = ssl.create_default_context()
-        context.check_hostname=False 
-        context.verify_mode=ssl.CERT_NONE 
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
 
-        sock = socket.create_connection((args.target,port),timeout=2)
-        tls_sock = context.wrap_socket(sock,server_hostname=args.target)
+        sock = socket.create_connection((args.target, port), timeout=2)
+        tls_sock = context.wrap_socket(sock, server_hostname=args.target)
         tls_sock.settimeout(2)
-        
-        def get_cn(cert):
-            try:
-                for typ, val in cert.get("subjectAltName", []):
-                    if typ == "DNS":
-                        return val
-            except:
-                pass
 
-            try:
-                subj = cert.get("subject",[])
-                for item in subj:
-                    for key,value in item:
-                        if key=='commonName':
-                            return value 
-            except:
-                pass 
-            return "unknown"
-        # (2) tls banner
+        cert = tls_sock.getpeercert()
+        cn = get_cn(cert)
+
+        # (2) TLS server-initiated
         try:
-            tls_sock.close()
-            sock = socket.create_connection((args.target, port), timeout=2)
-            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
-            tls_sock.settimeout(2)
-
             data = tls_sock.recv(1024)
             if data:
-                cert = tls_sock.getpeercert()
-                cn = get_cn(cert)
-                
-                data = ''.join(chr(b) for b in data)
-                print(f"Type: (2) TLS server banner | CN {cn}")
-                print(f'Response: {data[:1024]}\n')
-
+                print(f"Host: {args.target}:{port}")
+                print(f"Type: (2) TLS server-initiated | CN {cn}")
+                print("Response: ...\n")
                 tls_sock.close()
-                continue 
-        except socket.timeout:
-            pass 
+                continue
+        except:
+            pass
 
-        # HTTPS (4)
+        # (4) HTTPS
         try:
-            tls_sock.close()
-            sock = socket.create_connection((args.target, port), timeout=2)
-            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
-            tls_sock.settimeout(2)
-
             tls_sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
             data = tls_sock.recv(1024)
-
             if data:
-                cert = tls_sock.getpeercert()
-                cn = get_cn(cert)
-                if data:
-                    data = ''.join(chr(b) for b in data)
-                    print(f"Type: (4) HTTPS Server | CN {cn}")
-                    print(f"Response: {data[:1024]}\n")
+                print(f"Host: {args.target}:{port}")
+                print(f"Type: (4) HTTPS server | CN {cn}")
+                print("Response: ...\n")
+                tls_sock.close()
+                continue
+        except:
+            pass
 
-                    tls_sock.close()
-                    continue 
-        except socket.timeout:
-            pass 
-            
-        # generic tls
+        # (6) Generic TLS
         try:
-            tls_sock.close()
-            sock = socket.create_connection((args.target, port), timeout=2)
-            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
-            tls_sock.settimeout(2)
-
             tls_sock.sendall(b"\r\n\r\n\r\n\r\n")
             data = tls_sock.recv(1024)
+        except (socket.timeout, ConnectionResetError):
+            data = b""
 
-            cert = tls_sock.getpeercert()
-            cn = get_cn(cert)
+        print(f"Host: {args.target}:{port}")
+        print(f"Type: (6) Generic TLS server | CN {cn}")
+        print("Response: none\n")
 
-            print(f"Type: (6) generic TLS server | CN {cn}")
-
-            if data:
-                data = ''.join(chr(b) for b in data)
-                print(f"Response: {data[:1024]}\n")
-            else:
-                print("Response: none\n")
-            
-            tls_sock.close()
-            continue
-        except (socket.timeout,ConnectionResetError):
-            print(f"Type: (6) generic TLS server | CN {cn}")
-            print("Response: none\n")
-            pass 
+        tls_sock.close()
+        continue
     except Exception as e:
-        pass 
+        pass
     
     # TCP
     try:
