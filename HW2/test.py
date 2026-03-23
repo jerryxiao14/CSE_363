@@ -28,7 +28,7 @@ while True:
 
 
 
-MODE = 2   # change to 2, 4, or 6
+MODE = 6 # change to 2, 4, or 6
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
@@ -53,6 +53,7 @@ while True:
         elif MODE == 4:
             # HTTPS-like
             data = tls_conn.recv(1024)
+            print(f'data is {str(data)}')
             if data.startswith(b"GET"):
                 tls_conn.send(b"HTTP/1.0 200 OK\r\n\r\nhello")
 

@@ -146,6 +146,7 @@ for port in open_ports:
             return "unknown"
         # (2) tls banner
         try:
+            tls_sock.close()
             sock = socket.create_connection((args.target, port), timeout=2)
             tls_sock = context.wrap_socket(sock, server_hostname=args.target)
             tls_sock.settimeout(2)
@@ -166,6 +167,7 @@ for port in open_ports:
 
         # HTTPS (4)
         try:
+            tls_sock.close()
             sock = socket.create_connection((args.target, port), timeout=2)
             tls_sock = context.wrap_socket(sock, server_hostname=args.target)
             tls_sock.settimeout(2)
@@ -188,6 +190,7 @@ for port in open_ports:
             
         # generic tls
         try:
+            tls_sock.close()
             sock = socket.create_connection((args.target, port), timeout=2)
             tls_sock = context.wrap_socket(sock, server_hostname=args.target)
             tls_sock.settimeout(2)
