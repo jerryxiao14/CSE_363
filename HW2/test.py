@@ -26,29 +26,29 @@ while True:
     conn.close()
 '''
 
-HOST = '0.0.0.0'
-PORT = 3132
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
 
-bind_sock = socket.socket()
-bind_sock.bind((HOST, PORT))
-bind_sock.listen(5)
-print(f"Generic TLS server listening on port {PORT}...")
+sock = socket.socket()
+sock.bind(("0.0.0.0", 3132))
+sock.listen(5)
+
+print("Generic TLS server listening on port 3132...")
 
 while True:
-    client_sock, addr = bind_sock.accept()
+    client_sock, addr = sock.accept()
     print(f"Connection from {addr}")
 
-    # Wrap socket in TLS
-    tls_conn = context.wrap_socket(client_sock, server_side=True)
+    try:
+        tls_conn = context.wrap_socket(client_sock, server_side=True)
 
-    # Wait for client data
-    data = tls_conn.recv(1024)
+        # TYPE (6): generic TLS
+        data = tls_conn.recv(1024)
+        tls_conn.send(b"generic tls reply")
 
-    # Only respond if it's the generic probe
-    if data.strip() == b"\r\n\r\n\r\n\r\n":
-        tls_conn.sendall(b"generic TLS reply")
+        tls_conn.close()
 
-    tls_conn.close()
+    except ssl.SSLError as e:
+        print(f"Ignoring TLS error: {e}")
+        client_sock.close()

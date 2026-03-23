@@ -117,12 +117,102 @@ for port in open_ports:
                 print(f'Response: {data[:1024]}\n')
             else:
                 print("Response: none\n")
+            continue 
         except socket.timeout:
             pass
-        
-        print("Type: unkown (no TCP banner)")
-        print("Response is none")
         s.close()
     except Exception as e:
         print(f'something wrong happened error is {e}')
         pass 
+    # TLS
+    try:
+        context = ssl.create_default_context()
+        context.check_hostname=False 
+        context.verify_mode=ssl.CERT_NONE 
+
+        sock = socket.create_connection((args.target,port),timeout=2)
+        tls_sock = context.wrap_socket(sock,server_hostname=args.target)
+        tls_sock.settimeout(2)
+        
+        def get_cn(cert):
+            try:
+                subj = cert.get("subject",[])
+                for item in subj:
+                    for key,value in item:
+                        if key=='commonName':
+                            return value 
+            except:
+                pass 
+            return "unknown"
+        # (2) tls banner
+        try:
+            sock = socket.create_connection((args.target, port), timeout=2)
+            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
+            tls_sock.settimeout(2)
+
+            data = tls_sock.recv(1024)
+            if data:
+                cert = tls_sock.getpeercert()
+                cn = get_cn(cert)
+                
+                data = ''.join(chr(b) for b in data)
+                print(f"Type: (2) TLS server banner | CN {cn}")
+                print(f'Response: {data[:1024]}\n')
+
+                tls_sock.close()
+                continue 
+        except socket.timeout:
+            pass 
+
+        # HTTPS (4)
+        try:
+            sock = socket.create_connection((args.target, port), timeout=2)
+            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
+            tls_sock.settimeout(2)
+
+            tls_sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
+            data = tls_sock.recv(1024)
+
+            if data:
+                cert = tls_sock.getpeercert()
+                cn = get_cn(cert)
+                if data:
+                    data = ''.join(chr(b) for b in data)
+                    print(f"Type: (4) HTTPS Server | CN {cn}")
+                    print(f"Response: {data[:1024]}\n")
+
+                    tls_sock.close()
+                    continue 
+        except socket.timeout:
+            pass 
+            
+        # generic tls
+        try:
+            sock = socket.create_connection((args.target, port), timeout=2)
+            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
+            tls_sock.settimeout(2)
+
+            tls_sock.sendall(b"\r\n\r\n\r\n\r\n")
+            data = tls_sock.recv(1024)
+
+            cert = tls_sock.getpeercert()
+            cn = get_cn(cert)
+
+            print(f"Type: (6) generic TLS server | CN {cn}")
+
+            if data:
+                data = ''.join(chr(b) for b in data)
+                print(f"Response: {data[:1024]}\n")
+            else:
+                print("Response: none\n")
+            
+            tls_sock.close()
+            continue
+        except socket.timeout:
+            pass 
+    except Exception as e:
+        pass 
+        
+        
+        
+    
