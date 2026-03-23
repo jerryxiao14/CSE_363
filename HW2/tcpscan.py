@@ -165,7 +165,9 @@ for port in open_ports:
             
             tls_sock.close()
             continue
-        except socket.timeout:
+        except (socket.timeout,ConnectionResetError):
+            print(f"Type: (6) generic TLS server | CN {cn}")
+            print("Response: none\n")
             pass 
     except Exception as e:
         pass 
@@ -219,8 +221,10 @@ for port in open_ports:
             else:
                 print("Response: none\n")
             continue 
-        except socket.timeout:
-            pass
+        except (socket.timeout,ConnectionResetError):
+            print(f"Type: (5) generic TCP server")
+            print("Response: none\n")
+            pass 
         s.close()
     except Exception as e:
         print(f'something wrong happened error is {e}')
