@@ -37,7 +37,7 @@ def probe_tls(tls_sock, target, port, cn):
         if data:
             print(f"Host: {target}:{port}")
             print(f"Type: (2) TLS server-initiated | CN {cn}")
-            print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+            print(f"Response: {''.join(chr(b) if 32<=b<=126 else '.' for b in data)}\n")
             return True
     except:
         pass
@@ -49,7 +49,7 @@ def probe_tls(tls_sock, target, port, cn):
         if data and data.startswith(b"HTTP"):
             print(f"Host: {target}:{port}")
             print(f"Type: (4) HTTPS server | CN {cn}")
-            print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+            print(f"Response: {''.join(chr(b) if 32<=b<=126 else '.' for b in data)}\n")
             return True
     except:
         pass
@@ -64,7 +64,7 @@ def probe_tls(tls_sock, target, port, cn):
     print(f"Host: {target}:{port}")
     print(f"Type: (6) Generic TLS server | CN {cn}")
     if data:
-        print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+        print(f"Response: {''.join(chr(b) if 32<=b<=126 else '.' for b in data)}\n")
     else:
         print("Response: none\n")
 
@@ -81,7 +81,7 @@ def probe_tcp(target, port):
             if data:
                 print(f"Host: {target}:{port}")
                 print("Type: (1) TCP server-initiated")
-                print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+                print(f"Response: {''.join(chr(b) if 32<=b<=126 else '.' for b in data)}\n")
                 return True
         except socket.timeout:
             pass
@@ -99,7 +99,7 @@ def probe_tcp(target, port):
         if data and data.startswith(b"HTTP"):
             print(f"Host: {target}:{port}")
             print("Type: (3) HTTP server")
-            print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+            print(f"Response: {''.join(chr(b) if 32<=b<=126 else '.' for b in data)}\n")
             return True
         s.close()
     except:
@@ -118,7 +118,7 @@ def probe_tcp(target, port):
     print(f"Host: {target}:{port}")
     print("Type: (5) Generic TCP server")
     if data:
-        print(f"Response: {data.decode(errors='replace')[:1024]}\n")
+        print(f"Response: {''.join(chr(b) if 32<=b<=126 else '.' for b in data)}\n")
     else:
         print("Response: none\n")
 
