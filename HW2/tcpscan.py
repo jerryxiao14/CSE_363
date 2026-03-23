@@ -70,60 +70,7 @@ print("\n service fingerprinting now")
 for port in open_ports:
     print(f'trying port {port}')
 
-    try:
-        s = socket.create_connection((args.target,port),timeout=2)
-        s.settimeout(2)
-        # TCP banner
-        try:
-            data=s.recv(1024)
-            if data:
-                data = ''.join(chr(b) for b in data)
-                print("Type: (1) TCP server-initialted")
-                print(f"Response: {data[:1024]}\n")
 
-                s.close()
-                continue 
-        except socket.timeout:
-            pass
-        # try http now 
-        try:
-            s.close() 
-            s = socket.create_connection((args.target,port),timeout=2)
-            s.settimeout(2)
-            s.sendall(b"GET / HTTP/1.0\r\n\r\n")
-            data = s.recv(1024)
-
-            if data:
-                data = ''.join(chr(b) for b in data)
-                print(f'Type: (3) HTTP server')
-                print(f"Response: {data[:1024]}\n")
-
-                s.close()
-                continue 
-        except socket.timeout:
-            pass
-        # generic tcp
-        try:
-            s.close()
-            s=socket.create_connection((args.target,port),timeout=2)
-            s.settimeout(2)
-
-            s.sendall(b"\r\n\r\n\r\n\r\n")
-            data=s.recv(1024)
-
-            print("Type: (5) Generic TCP server")
-            if data:
-                data=''.join(chr(b) for b in data)
-                print(f'Response: {data[:1024]}\n')
-            else:
-                print("Response: none\n")
-            continue 
-        except socket.timeout:
-            pass
-        s.close()
-    except Exception as e:
-        print(f'something wrong happened error is {e}')
-        pass 
     # TLS
     try:
         context = ssl.create_default_context()
@@ -135,6 +82,13 @@ for port in open_ports:
         tls_sock.settimeout(2)
         
         def get_cn(cert):
+            try:
+                for typ, val in cert.get("subjectAltName", []):
+                    if typ == "DNS":
+                        return val
+            except:
+                pass
+
             try:
                 subj = cert.get("subject",[])
                 for item in subj:
@@ -215,6 +169,64 @@ for port in open_ports:
             pass 
     except Exception as e:
         pass 
+    
+    # TCP
+    try:
+        s = socket.create_connection((args.target,port),timeout=2)
+        s.settimeout(2)
+        # TCP banner
+        try:
+            data=s.recv(1024)
+            if data:
+                data = ''.join(chr(b) for b in data)
+                print("Type: (1) TCP server-initialted")
+                print(f"Response: {data[:1024]}\n")
+
+                s.close()
+                continue 
+        except socket.timeout:
+            pass
+        # try http now 
+        try:
+            s.close() 
+            s = socket.create_connection((args.target,port),timeout=2)
+            s.settimeout(2)
+            s.sendall(b"GET / HTTP/1.0\r\n\r\n")
+            data = s.recv(1024)
+
+            if data:
+                data = ''.join(chr(b) for b in data)
+                print(f'Type: (3) HTTP server')
+                print(f"Response: {data[:1024]}\n")
+
+                s.close()
+                continue 
+        except socket.timeout:
+            pass
+        # generic tcp
+        try:
+            s.close()
+            s=socket.create_connection((args.target,port),timeout=2)
+            s.settimeout(2)
+
+            s.sendall(b"\r\n\r\n\r\n\r\n")
+            data=s.recv(1024)
+
+            print("Type: (5) Generic TCP server")
+            if data:
+                data=''.join(chr(b) for b in data)
+                print(f'Response: {data[:1024]}\n')
+            else:
+                print("Response: none\n")
+            continue 
+        except socket.timeout:
+            pass
+        s.close()
+    except Exception as e:
+        print(f'something wrong happened error is {e}')
+        pass 
+    
+    
         
         
         
