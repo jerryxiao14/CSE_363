@@ -192,24 +192,24 @@ for port in open_ports:
     cn = "unknown"
 
     try:
+        ip = args.target 
+        hostname = ip 
+        if ip.replace(".","").isdigit():
+            try:
+                hostname = socket.gethostbyaddr(ip)[0]
+            except:
+                hostname = None 
+        
         sock = socket.create_connection((args.target, port), timeout=2)
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
         server_name = args.target if not args.target.replace(".", "").isdigit() else None
-        tls_sock = context.wrap_socket(sock, server_hostname=server_name)
+        tls_sock = context.wrap_socket(sock, server_hostname=hostname)
         tls_sock.settimeout(2)
 
         cert = tls_sock.getpeercert()
-        if not cert:
-            try:
-                der = tls_sock.getpeercert(binary_form=True)
-                if der:
-                    pem = ssl.DER_cert_to_PEM_cert(der)
-                    cert = ssl._ssl._test_decode_cert(pem)
-            except Exception:
-                cert = {}
         cn = get_cn(cert)
 
         is_tls = True
