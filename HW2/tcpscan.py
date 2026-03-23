@@ -202,6 +202,14 @@ for port in open_ports:
         tls_sock.settimeout(2)
 
         cert = tls_sock.getpeercert()
+        if not cert:
+            try:
+                der = tls_sock.getpeercert(binary_form=True)
+                if der:
+                    pem = ssl.DER_cert_to_PEM_cert(der)
+                    cert = ssl._ssl._test_decode_cert(pem)
+            except Exception:
+                cert = {}
         cn = get_cn(cert)
 
         is_tls = True
