@@ -10,7 +10,9 @@ DEFAULT_PORTS = [21, 22, 23, 25, 80, 110, 143, 443, 587, 853, 993, 3389, 8080]
 
 
 def get_cn(cert):
+    print(f'cert is {cert}')
     try:
+        print(f'subjectAltName is {cert.get("subjectAltName")}')
         for typ, val in cert.get("subjectAltName", []):
             if typ == "DNS":
                 return val
@@ -19,6 +21,7 @@ def get_cn(cert):
 
     try:
         subj = cert.get("subject",[])
+        print(f'subj is {subj}')
         for item in subj:
             for key,value in item:
                 if key=='commonName':
@@ -193,7 +196,7 @@ for port in open_ports:
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        
+
         server_name = args.target if not args.target.replace(".", "").isdigit() else None
         tls_sock = context.wrap_socket(sock, server_hostname=args.target)
         tls_sock.settimeout(2)
