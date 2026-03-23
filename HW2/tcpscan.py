@@ -98,22 +98,13 @@ for port in open_ports:
         context.verify_mode = ssl.CERT_NONE
 
         sock = socket.create_connection((args.target, port), timeout=2)
-
-        try:
-            tls_sock = context.wrap_socket(sock, server_hostname=args.target)
-        except Exception:
-            # 🔥 KEY FIX: handshake failed → STILL classify as generic TLS
-            print(f"Host: {args.target}:{port}")
-            print(f"Type: (6) Generic TLS server | CN unknown")
-            print("Response: none\n")
-            continue
-
+        tls_sock = context.wrap_socket(sock, server_hostname=args.target)
         tls_sock.settimeout(2)
 
         cert = tls_sock.getpeercert()
         cn = get_cn(cert)
 
-        # (2)
+        # (2) TLS server-initiated
         try:
             data = tls_sock.recv(1024)
             if data:
@@ -125,7 +116,7 @@ for port in open_ports:
         except:
             pass
 
-        # (4)
+        # (4) HTTPS
         try:
             tls_sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
             data = tls_sock.recv(1024)
@@ -138,7 +129,7 @@ for port in open_ports:
         except:
             pass
 
-        # (6)
+        # (6) Generic TLS
         try:
             tls_sock.sendall(b"\r\n\r\n\r\n\r\n")
             data = tls_sock.recv(1024)
@@ -151,9 +142,8 @@ for port in open_ports:
 
         tls_sock.close()
         continue
-
     except Exception as e:
-        print(f"[TLS ERROR] {e}")
+        pass
     
     # TCP
     try:
