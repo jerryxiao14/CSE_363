@@ -101,7 +101,7 @@ for port in open_ports:
 
         try:
             tls_sock = context.wrap_socket(sock, server_hostname=args.target)
-        except (ssl.SSLError, ConnectionResetError):
+        except Exception:
             # 🔥 KEY FIX: handshake failed → STILL classify as generic TLS
             print(f"Host: {args.target}:{port}")
             print(f"Type: (6) Generic TLS server | CN unknown")
